@@ -168,9 +168,6 @@ INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT )
 				g_bodyOrientation.setPitch(Ogre::Radian(0)).setRoll(Ogre::Radian(0));
 			}
 
-
-			Ogre::LogManager::getSingleton().logMessage(std::string("Oculus: deltat=")+Ogre::StringConverter::toString(deltaT));
-			Ogre::LogManager::getSingleton().logMessage(std::string("Oculus: mouse=")+Ogre::StringConverter::toString(g_mouse->getMouseState().X.rel));
 			g_bodyOrientation.yaw(Radian(-g_mouse->getMouseState().X.rel*g_turnSpeed));
 			if(!oculus.isOculusReady())
 			{
