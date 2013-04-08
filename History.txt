@@ -1,0 +1,5 @@
+OgreOculus Demo 1
+
+V0.5.1 (08/04/2013)     - Fixed LensCentre shader value not being set (broken by V0.5).
+V0.5 (06/04/2013)       - First release using open sourced code.
+                        - Fixed sensor cleanup leak.

@@ -195,6 +195,33 @@ bool Oculus::setupOgre(Ogre::SceneManager *sm, Ogre::RenderWindow *win, Ogre::Sc
 	m_cameras[0] = sm->createCamera("CameraLeft");
 	m_cameras[1] = sm->createCamera("CameraRight");
 	
+	Ogre::MaterialPtr matLeft = Ogre::MaterialManager::getSingleton().getByName("Ogre/Compositor/Oculus");
+	Ogre::MaterialPtr matRight = matLeft->clone("Ogre/Compositor/Oculus/Right");
+	Ogre::GpuProgramParametersSharedPtr pParamsLeft = matLeft->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+	Ogre::GpuProgramParametersSharedPtr pParamsRight = matRight->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+	Ogre::Vector4 hmdwarp;
+	if(m_stereoConfig)
+	{
+		hmdwarp = Ogre::Vector4(m_stereoConfig->GetDistortionK(0),
+								m_stereoConfig->GetDistortionK(1),
+								m_stereoConfig->GetDistortionK(2),
+								m_stereoConfig->GetDistortionK(3));
+	}
+	else
+	{
+		hmdwarp = Ogre::Vector4(g_defaultDistortion[0],
+								g_defaultDistortion[1],
+								g_defaultDistortion[2],
+								g_defaultDistortion[3]);
+	}
+	pParamsLeft->setNamedConstant("HmdWarpParam", hmdwarp);
+	pParamsRight->setNamedConstant("HmdWarpParam", hmdwarp);
+	pParamsLeft->setNamedConstant("LensCentre", 0.5f+(m_stereoConfig->GetProjectionCenterOffset()/2.0f));
+	pParamsRight->setNamedConstant("LensCentre", 0.5f-(m_stereoConfig->GetProjectionCenterOffset()/2.0f));
+
+	Ogre::CompositorPtr comp = Ogre::CompositorManager::getSingleton().getByName("OculusRight");
+	comp->getTechnique(0)->getOutputTargetPass()->getPass(0)->setMaterialName("Ogre/Compositor/Oculus/Right");
+
 	for(int i=0;i<2;++i)
 	{
 		m_cameraNode->attachObject(m_cameras[i]);
@@ -221,27 +248,10 @@ bool Oculus::setupOgre(Ogre::SceneManager *sm, Ogre::RenderWindow *win, Ogre::Sc
 		}
 		m_viewports[i] = win->addViewport(m_cameras[i], i, 0.5f*i, 0, 0.5f, 1.0f);
 		m_viewports[i]->setBackgroundColour(g_defaultViewportColour);
-		m_compositors[i] = Ogre::CompositorManager::getSingleton().addCompositor(m_viewports[i],"Oculus");
+		m_compositors[i] = Ogre::CompositorManager::getSingleton().addCompositor(m_viewports[i],i==0?"OculusLeft":"OculusRight");
 		m_compositors[i]->setEnabled(true);
 	}
-	Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().getByName("Ogre/Compositor/Oculus");
-	Ogre::GpuProgramParametersSharedPtr pParams = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
-	if(m_stereoConfig)
-	{
-		pParams->setNamedConstant("HmdWarpParam", Ogre::Vector4(
-			m_stereoConfig->GetDistortionK(0),
-			m_stereoConfig->GetDistortionK(1),
-			m_stereoConfig->GetDistortionK(2),
-			m_stereoConfig->GetDistortionK(3)));
-	}
-	else
-	{
-		pParams->setNamedConstant("HmdWarpParam", Ogre::Vector4(
-			g_defaultDistortion[0],
-			g_defaultDistortion[1],
-			g_defaultDistortion[2],
-			g_defaultDistortion[3]));
-	}
+
 	m_ogreReady = true;
 	Ogre::LogManager::getSingleton().logMessage("Oculus: Oculus setup completed successfully");
 	return true;
